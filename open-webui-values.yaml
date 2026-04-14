@@ -1,0 +1,66 @@
+replicaCount: 1
+
+# -- Disable bundled Ollama (we use vLLM instead) --
+ollama:
+  enabled: false
+
+# -- Disable bundled Pipelines (optional) --
+pipelines:
+  enabled: false
+
+# -- OpenAI-compatible API (pointing to vLLM / KServe) --
+openaiBaseApiUrl: "http://mistral-7b-instruct-predictor.llm-serving.svc.cluster.local:8080/v1"
+openaiApiKey: "none"
+
+# -- Service --
+service:
+  type: ClusterIP
+  port: 80
+  containerPort: 8080
+
+# -- Ingress: disabled — we use an OpenShift Route --
+ingress:
+  enabled: false
+
+# -- Security Contexts (compatible with OpenShift restricted-v2 SCC) --
+podSecurityContext: {}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Persistence --
+persistence:
+  enabled: true
+  size: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClass: ""   # leave empty for cluster default (e.g., gp3-csi on ROSA)
+
+# -- Disable Redis (not needed for single-replica, avoids permission issues on OpenShift) --
+websocket:
+  enabled: false
+redis:
+  enabled: false
+
+# -- Extra environment variables --
+extraEnvVars:
+  - name: WEBUI_SECRET_KEY
+    value: "change-me-to-a-random-string"
+  - name: WEBUI_NAME
+    value: "AI Chat"
+  - name: ENABLE_RAG_HYBRID_SEARCH
+    value: "true"
+
+# -- Resources --
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
