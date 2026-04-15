@@ -55,7 +55,7 @@ oc get nodes -l nvidia.com/gpu=true
 ### 3. Bootstrap ArgoCD and deploy everything
 
 ```bash
-./scripts/bootstrap.sh https://github.com/<YOUR_ORG>/openshift-ai-starter.git
+./scripts/bootstrap.sh https://github.com/danielpenagos/openshift-ai-starter.git
 ```
 
 This script:
