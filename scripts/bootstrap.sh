@@ -56,7 +56,7 @@ if [[ -n "${REPO_URL}" ]]; then
   # Update repo URLs in ArgoCD applications
   TEMP_DIR=$(mktemp -d)
   cp "${PROJECT_DIR}"/gitops/argocd/*.yaml "${TEMP_DIR}/"
-  sed -i.bak "s|https://github.com/<YOUR_ORG>/openshift-ai-starter.git|${REPO_URL}|g" "${TEMP_DIR}"/*.yaml
+  sed -i.bak "s|https://github.com/danielpenagos/openshift-ai-starter.git|${REPO_URL}|g" "${TEMP_DIR}"/*.yaml
   rm -f "${TEMP_DIR}"/*.bak
 
   oc apply -f "${TEMP_DIR}/app-of-apps.yaml"
@@ -66,7 +66,7 @@ if [[ -n "${REPO_URL}" ]]; then
 else
   echo "==> Step 2: Skipped (no REPO_URL provided)."
   echo "    To deploy via GitOps, run:"
-  echo "    ./scripts/bootstrap.sh https://github.com/<YOUR_ORG>/openshift-ai-starter.git"
+  echo "    ./scripts/bootstrap.sh https://github.com/danielpenagos/openshift-ai-starter.git"
   echo ""
   echo "    Or deploy manually with Kustomize:"
   echo "    oc apply -k gitops/overlays/rosa/"
