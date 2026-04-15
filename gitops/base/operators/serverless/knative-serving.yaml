@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: knative-serving
+---
+apiVersion: operator.knative.dev/v1beta1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+spec:
+  workloadOverrides:
+    - name: net-istio-controller
+      env:
+        - container: controller
+          envVars:
+            - name: ENABLE_SECRET_INFORMER_FILTERING_BY_CERT_UID
+              value: "true"
+    - name: net-istio-webhook
+      env:
+        - container: webhook
+          envVars:
+            - name: ENABLE_SECRET_INFORMER_FILTERING_BY_CERT_UID
+              value: "true"

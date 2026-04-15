@@ -1,0 +1,53 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: vllm-runtime
+  namespace: llm-serving
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    openshift.io/display-name: "vLLM ServingRuntime for KServe"
+spec:
+  builtInAdapter:
+    modelLoadingTimeoutMillis: 90000
+  containers:
+    - name: kserve-container
+      image: docker.io/vllm/vllm-openai:v0.8.5.post1
+      command:
+        - python3
+        - -m
+        - vllm.entrypoints.openai.api_server
+      args:
+        - --model
+        - /mnt/models/
+        - --served-model-name
+        - mistral-7b-instruct
+        - --port
+        - "8080"
+        - --max-model-len
+        - "8192"
+        - --dtype
+        - half
+        - --quantization
+        - awq
+        - --trust-remote-code
+        - --gpu-memory-utilization
+        - "0.9"
+      env:
+        - name: HOME
+          value: /tmp
+      ports:
+        - containerPort: 8080
+          name: http1
+          protocol: TCP
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          cpu: "2"
+          memory: 8Gi
+          nvidia.com/gpu: "1"
+  multiModel: false
+  supportedModelFormats:
+    - autoSelect: true
+      name: pytorch

@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: open-webui
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Helm chart for Open WebUI
+    - repoURL: https://helm.openwebui.com/
+      chart: open-webui
+      targetRevision: "*"
+      helm:
+        valueFiles:
+          - $values/gitops/base/open-webui/open-webui-values.yaml
+    # Values file from this repo
+    - repoURL: https://github.com/<YOUR_ORG>/openshift-ai-starter.git
+      targetRevision: main
+      ref: values
+    # Route and namespace
+    - repoURL: https://github.com/<YOUR_ORG>/openshift-ai-starter.git
+      targetRevision: main
+      path: gitops/base/open-webui
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: open-webui
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

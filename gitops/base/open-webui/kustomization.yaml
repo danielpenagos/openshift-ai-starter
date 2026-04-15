@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - route.yaml
+# Note: Open WebUI is deployed via Helm chart.
+# Use the values file: open-webui-values.yaml
+# helm install open-webui open-webui/open-webui -n open-webui -f open-webui-values.yaml

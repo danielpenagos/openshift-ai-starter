@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - operators/nfd
+  - operators/gpu-operator
+  - operators/serverless
+  - operators/servicemesh
+  - operators/openshift-ai
+  - datasciencecluster
+  - minio
+  - model-serving
+  - open-webui

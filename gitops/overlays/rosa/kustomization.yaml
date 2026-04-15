@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+# ROSA-specific patches can be added here.
+# Example: override storage class for ROSA's default gp3-csi
+# patches:
+#   - path: patches/storage-class.yaml
+#     target:
+#       kind: PersistentVolumeClaim

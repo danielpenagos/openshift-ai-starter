@@ -1,27 +1,63 @@
-# OpenShift AI - Chatbot UI Evaluation
+# OpenShift AI Starter
 
 ## Project Overview
 
-This project evaluates open-source chatbot UI options for deployment on **Red Hat OpenShift AI (RHOAI)**. The goal is to identify the best UI frontend that can connect to model serving endpoints (KServe / vLLM / TGI) and support multiple HuggingFace models.
+GitOps-ready starter kit for deploying **OpenShift AI** with **Open WebUI** on managed OpenShift clusters (ROSA and ARO). Includes operator subscriptions, MinIO for model storage, vLLM model serving, and Open WebUI as the chat frontend.
 
-## Key Context
+## Project Structure
 
-- **Platform**: Red Hat OpenShift AI (RHOAI)
-- **Model Serving**: KServe, vLLM, TGI (OpenAI-compatible API endpoints)
-- **GCP Project**: `itpc-gcp-global-revenue-claude`
-- **Focus**: Enterprise-ready, open-source chatbot UIs with Helm/K8s support
+```
+openshift-ai-starter/
+├── docs/                        # Human-readable guides
+│   ├── rosa-guide.md            # Step-by-step ROSA guide (battle-tested)
+│   ├── aro-guide.md             # ARO guide (to be created)
+│   └── chatbot-ui-options.md    # UI evaluation research
+├── gitops/
+│   ├── bootstrap/               # GitOps operator install (one-time, manual)
+│   ├── argocd/                  # ArgoCD Application definitions (app-of-apps)
+│   ├── base/                    # Shared Kustomize base
+│   │   ├── operators/           # NFD, GPU, Serverless, ServiceMesh, OpenShift AI
+│   │   ├── datasciencecluster/  # DataScienceCluster CR
+│   │   ├── minio/               # In-cluster S3-compatible storage
+│   │   ├── model-serving/       # vLLM ServingRuntime + InferenceService
+│   │   └── open-webui/          # Helm values + Route
+│   └── overlays/
+│       ├── rosa/                # ROSA-specific (GPU machinepool, gp3-csi)
+│       └── aro/                 # ARO-specific (GPU nodepool, managed-premium)
+├── scripts/
+│   ├── bootstrap.sh             # One-time: install GitOps operator + deploy app-of-apps
+│   └── upload-model.sh          # Helper to upload HF models to MinIO
+└── CLAUDE.md
+```
 
-## Top Candidates
+## Key Technical Decisions
 
-1. **Open WebUI** — Most mature, explicit OpenShift Helm support
-2. **LibreChat** — Best enterprise auth (SSO, RBAC, audit), MIT license
-3. **HF Chat UI** — Apache 2.0, auto-discovers models from endpoints
+- **Model**: `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` (4-bit quantized, fits on T4 16GB)
+- **vLLM image**: `docker.io/vllm/vllm-openai:v0.8.5.post1` (upstream, not RHOAI image)
+- **GPU instance**: `g4dn.xlarge` on ROSA (cheapest, ~$0.526/hr)
+- **Storage**: MinIO in-cluster (with AWS S3 as alternative)
+- **GitOps**: Kustomize base/overlay + ArgoCD app-of-apps
 
-## Key Evaluation Criteria
+## Quick Deploy
 
-- License compatibility (MIT / Apache 2.0 preferred)
-- Helm chart / Kubernetes-native deployment
-- OpenAI-compatible API support (for vLLM/TGI)
-- Multi-model selection
-- Enterprise features (SSO, RBAC, audit)
-- HuggingFace integration
+```bash
+# 1. Bootstrap (one-time): install GitOps operator + ArgoCD
+./scripts/bootstrap.sh https://github.com/<YOUR_ORG>/openshift-ai-starter.git
+
+# Or manually without ArgoCD:
+oc apply -k gitops/bootstrap/          # install GitOps operator
+oc apply -k gitops/overlays/rosa/      # deploy everything via Kustomize
+
+# 2. Create GPU machine pool (manual, see gitops/overlays/rosa/gpu-machinepool.md)
+
+# 3. Upload a model to MinIO:
+./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq
+```
+
+## OpenShift-Specific Gotchas
+
+- Containers run as random UIDs — use `HOME=/tmp`, `fsGroup: 0`, never `apt-get`
+- Redis in Open WebUI fails on OpenShift — disable it for single-replica
+- `WEBUI_SECRET_KEY` env var is required by Open WebUI
+- GPU nodes need `nvidia.com/gpu=:NoSchedule` taint + matching toleration on pods
+- `huggingface-cli` is deprecated — use `hf` instead

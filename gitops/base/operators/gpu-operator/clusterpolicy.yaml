@@ -1,0 +1,92 @@
+apiVersion: nvidia.com/v1
+kind: ClusterPolicy
+metadata:
+  name: gpu-cluster-policy
+spec:
+  operator:
+    runtimeClass: nvidia
+    initContainer: {}
+    use_ocp_driver_toolkit: true
+  daemonsets: {}
+  driver:
+    enabled: true
+    useNvidiaDriverCRD: false
+    upgradePolicy:
+      autoUpgrade: true
+      drain:
+        deleteEmptyDir: false
+        enable: false
+        force: false
+        timeoutSeconds: 300
+      maxParallelUpgrades: 1
+      podDeletion:
+        deleteEmptyDir: false
+        force: false
+        timeoutSeconds: 300
+      waitForCompletion:
+        timeoutSeconds: 0
+    manager: {}
+    rdma:
+      enabled: false
+    repoConfig:
+      configMapName: ""
+    certConfig:
+      name: ""
+    licensingConfig:
+      secretName: ""
+      nlsEnabled: true
+    virtualTopology:
+      config: ""
+    kernelModuleConfig:
+      name: ""
+  toolkit:
+    enabled: true
+  devicePlugin:
+    enabled: true
+    config:
+      name: ""
+      default: ""
+  dcgm:
+    enabled: true
+  dcgmExporter:
+    enabled: true
+    config:
+      name: ""
+  gfd:
+    enabled: true
+  migManager:
+    enabled: true
+    config:
+      name: ""
+    gpuClientsConfig:
+      name: ""
+  nodeStatusExporter:
+    enabled: false
+  validator:
+    plugin: {}
+  sandboxWorkloads:
+    enabled: false
+    defaultWorkload: container
+  mig:
+    strategy: single
+  gds:
+    enabled: false
+  vgpuManager:
+    enabled: false
+    kernelModuleConfig:
+      name: ""
+  vgpuDeviceManager:
+    enabled: true
+    config:
+      name: ""
+      default: default
+  vfioManager:
+    enabled: true
+  sandboxDevicePlugin:
+    enabled: true
+  kataManager:
+    enabled: false
+    config: {}
+  psp:
+    enabled: false
+  cdi: {}
