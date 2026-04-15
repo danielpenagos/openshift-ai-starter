@@ -6,4 +6,3 @@ resources:
   - minio.yaml
   - model-serving.yaml
   - open-webui.yaml
-  - namespaces.yaml
