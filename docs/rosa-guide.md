@@ -695,19 +695,10 @@ This step downloads the model from HuggingFace and uploads it to MinIO. The reco
 First, create the bucket using a one-off MinIO Client pod:
 
 ```bash
-oc run mc-create-bucket --rm -it --restart=Never -n minio \
-  --image=quay.io/minio/mc:latest \
-  --command -- mc mb minio/models \
-  --insecure \
-  && mc alias set minio http://minio.minio.svc.cluster.local:9000 minioadmin minioadmin123
-```
-
-Or more reliably, run it in two steps:
-
-```bash
 oc run mc-setup --rm -it --restart=Never -n minio \
   --image=quay.io/minio/mc:latest \
-  -- /bin/sh -c '
+  --env="MC_CONFIG_DIR=/tmp/.mc" \
+  --command -- /bin/sh -c '
     mc alias set minio http://minio.minio.svc.cluster.local:9000 minioadmin minioadmin123 &&
     mc mb --ignore-existing minio/models &&
     echo "Bucket created successfully" &&
@@ -843,7 +834,8 @@ Use the MinIO Console (see [step 9.6](#96-verify-the-upload-via-the-minio-consol
 # From within the cluster
 oc run mc-verify --rm -it --restart=Never -n minio \
   --image=quay.io/minio/mc:latest \
-  -- /bin/sh -c '
+  --env="MC_CONFIG_DIR=/tmp/.mc" \
+  --command -- /bin/sh -c '
     mc alias set minio http://minio.minio.svc.cluster.local:9000 minioadmin minioadmin123 &&
     mc ls minio/models/mistral-7b-instruct-awq/
   '
