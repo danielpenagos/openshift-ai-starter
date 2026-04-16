@@ -42,7 +42,8 @@ openshift-ai-starter/
 
 ```bash
 # 1. Bootstrap (one-time): install GitOps operator + ArgoCD
-./scripts/bootstrap.sh https://github.com/<YOUR_ORG>/openshift-ai-starter.git
+REPO_ORG=danielpenagos
+./scripts/bootstrap.sh https://github.com/$REPO_ORG/openshift-ai-starter.git
 
 # Or manually without ArgoCD:
 oc apply -k gitops/bootstrap/          # install GitOps operator

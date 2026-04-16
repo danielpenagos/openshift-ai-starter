@@ -4,8 +4,7 @@ metadata:
   name: model-uploader
   namespace: minio
   annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
   backoffLimit: 2
   ttlSecondsAfterFinished: 300
