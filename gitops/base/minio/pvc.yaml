@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: minio-storage
   namespace: minio
+  labels:
+    app: minio
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   accessModes:
     - ReadWriteOnce

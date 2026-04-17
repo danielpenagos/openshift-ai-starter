@@ -7,6 +7,7 @@ metadata:
     serving.knative.openshift.io/enablePassthrough: "true"
     sidecar.istio.io/inject: "true"
     serving.kserve.io/deploymentMode: RawDeployment
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     opendatahub.io/dashboard: "true"
 spec:

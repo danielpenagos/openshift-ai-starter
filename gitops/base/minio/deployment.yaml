@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: minio
   namespace: minio
+  labels:
+    app: minio
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   selector:
