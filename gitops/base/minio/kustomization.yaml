@@ -9,6 +9,5 @@ resources:
   - deployment.yaml
   - service.yaml
   - route.yaml
-# wave 2
-  - model-download-pvc.yaml
+# PostSync hook (PVC + Job combined in one file)
   - model-uploader-job.yaml
