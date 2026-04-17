@@ -18,8 +18,6 @@ spec:
         app: model-uploader
     spec:
       restartPolicy: Never
-      securityContext:
-        fsGroup: 0
       containers:
         - name: uploader
           image: python:3.11-slim
