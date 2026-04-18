@@ -26,9 +26,9 @@ spec:
   ignoreDifferences:
     - group: operator.knative.dev
       kind: KnativeServing
-      jsonPointers:
-        - /metadata/finalizers
-        - /status
+      jqPathExpressions:
+        - .metadata
+        - .spec
     - group: nvidia.com
       kind: ClusterPolicy
       jsonPointers:
