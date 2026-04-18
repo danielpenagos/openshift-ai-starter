@@ -22,3 +22,20 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: operator.knative.dev
+      kind: KnativeServing
+      jsonPointers:
+        - /metadata/finalizers
+        - /status
+    - group: nvidia.com
+      kind: ClusterPolicy
+      jsonPointers:
+        - /metadata/finalizers
+        - /status
+    - group: nfd.openshift.io
+      kind: NodeFeatureDiscovery
+      jsonPointers:
+        - /metadata/finalizers
+        - /status
