@@ -5,5 +5,5 @@ resources:
   - operators-instances.yaml
   - datasciencecluster.yaml
   - minio.yaml
-  - model-serving.yaml
-  - open-webui.yaml
+#  - model-serving.yaml
+#  - open-webui.yaml
