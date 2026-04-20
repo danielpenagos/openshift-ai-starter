@@ -9,5 +9,3 @@ resources:
   - deployment.yaml
   - service.yaml
   - route.yaml
-# PostSync hook (PVC + Job combined in one file)
-  - model-uploader-job.yaml

@@ -75,6 +75,8 @@ This script:
 
 ### 4. Upload a model to MinIO
 
+> **Important:** After ArgoCD finishes deploying, the model-serving component will be in error state (`CrashLoopBackOff`). This is expected — the InferenceService tries to download the model from MinIO, but the bucket is empty. Once you upload the model (this step), the pod will automatically recover and start serving.
+
 Once MinIO is running, upload the quantized Mistral model:
 
 ```bash
@@ -82,6 +84,14 @@ Once MinIO is running, upload the quantized Mistral model:
 ```
 
 This creates a pod inside the cluster that downloads the model from HuggingFace and copies it to MinIO. Follow the logs until you see `=== Done! ===`.
+
+After the upload completes, the InferenceService pod will restart automatically and load the model. This can take a few minutes. Monitor with:
+
+```bash
+oc get pods -n llm-serving -w
+```
+
+Wait until the pod shows `1/1 Running`.
 
 To upload a different model:
 
