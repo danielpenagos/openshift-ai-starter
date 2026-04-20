@@ -99,7 +99,10 @@ To upload a different model:
 ./scripts/upload-model.sh <HUGGINGFACE_MODEL_ID> <MINIO_FOLDER_NAME>
 ```
 
-### 5. Install Open WebUI via Helm
+### Alternative: Install Open WebUI via Helm instead of using GitOps
+
+If you want to install open web ui by yourself, you can execute this helm installation.
+
 
 ```bash
 helm repo add open-webui https://helm.openwebui.com/
@@ -123,7 +126,7 @@ Get the URL:
 oc get route open-webui -n open-webui -o jsonpath='https://{.spec.host}{"\n"}'
 ```
 
-### 6. Access Open WebUI
+### 5. Access Open WebUI
 
 1. Open the URL from step 5 in your browser.
 2. **Sign up** — the first user becomes the admin.

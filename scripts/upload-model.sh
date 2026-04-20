@@ -15,7 +15,7 @@ set -euo pipefail
 HF_MODEL="${1:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH>}"
 MINIO_PATH="${2:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH>}"
 NAMESPACE="${MINIO_NAMESPACE:-minio}"
-PVC_SIZE="${PVC_SIZE:-10Gi}"
+PVC_SIZE="${PVC_SIZE:-30Gi}"
 
 echo "==> Uploading model: ${HF_MODEL}"
 echo "==> MinIO path: models/${MINIO_PATH}"
@@ -24,6 +24,10 @@ echo "==> Namespace: ${NAMESPACE}"
 # Clean up any previous run
 kubectl delete pod model-uploader -n "${NAMESPACE}" --ignore-not-found
 kubectl delete pvc model-download -n "${NAMESPACE}" --ignore-not-found
+
+# Create a ServiceAccount with anyuid SCC for PVC write access
+kubectl create serviceaccount model-uploader-sa -n "${NAMESPACE}" 2>/dev/null || true
+oc adm policy add-scc-to-user anyuid -z model-uploader-sa -n "${NAMESPACE}" 2>/dev/null || true
 
 # Create PVC and uploader pod
 cat <<EOF | kubectl apply -f -
@@ -45,6 +49,7 @@ metadata:
   name: model-uploader
   namespace: ${NAMESPACE}
 spec:
+  serviceAccountName: model-uploader-sa
   restartPolicy: Never
   securityContext:
     fsGroup: 0
@@ -56,6 +61,8 @@ spec:
           value: /tmp
         - name: HF_HOME
           value: /tmp/.cache/huggingface
+        - name: MC_CONFIG_DIR
+          value: /tmp/.mc
       command:
         - /bin/bash
         - -c
@@ -91,11 +98,11 @@ spec:
           mountPath: /models
       resources:
         requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
           cpu: "1"
           memory: 2Gi
-        limits:
-          cpu: "2"
-          memory: 4Gi
   volumes:
     - name: model-storage
       persistentVolumeClaim:
@@ -103,7 +110,7 @@ spec:
 EOF
 
 echo "==> Waiting for pod to start..."
-kubectl wait --for=condition=Ready pod/model-uploader -n "${NAMESPACE}" --timeout=120s 2>/dev/null || true
+kubectl wait --for=condition=Ready pod/model-uploader -n "${NAMESPACE}" --timeout=300s 2>/dev/null || true
 
 echo "==> Following logs (Ctrl+C to detach, pod will continue)..."
 kubectl logs -f model-uploader -n "${NAMESPACE}" || true
@@ -112,4 +119,6 @@ echo ""
 echo "==> Cleaning up..."
 kubectl delete pod model-uploader -n "${NAMESPACE}" --ignore-not-found
 kubectl delete pvc model-download -n "${NAMESPACE}" --ignore-not-found
+oc adm policy remove-scc-from-user anyuid -z model-uploader-sa -n "${NAMESPACE}" 2>/dev/null || true
+kubectl delete serviceaccount model-uploader-sa -n "${NAMESPACE}" --ignore-not-found
 echo "==> Done!"
