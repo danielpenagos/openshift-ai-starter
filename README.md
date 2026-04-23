@@ -212,6 +212,7 @@ oc get route open-webui -n open-webui
 openshift-ai-starter/
 ├── docs/                          # Detailed step-by-step guides
 │   ├── rosa-guide.md              # ROSA deployment guide
+│   ├── migration-v2-to-v3.md     # RHOAI v2 → v3 migration guide
 │   └── chatbot-ui-options.md      # Chatbot UI evaluation
 ├── gitops/
 │   ├── bootstrap/                 # GitOps operator (one-time install)
@@ -223,12 +224,31 @@ openshift-ai-starter/
 │   │   ├── model-serving/         # vLLM ServingRuntime + InferenceService
 │   │   └── open-webui/            # Helm values + Route
 │   └── overlays/
-│       ├── rosa/                  # ROSA-specific config
+│       ├── rosa/                  # ROSA + RHOAI 3.x (default)
+│       ├── rosa-v2/              # ROSA + RHOAI 2.x (adds Serverless/ServiceMesh)
 │       └── aro/                   # ARO-specific config
 ├── scripts/                       # Automation scripts
 ├── CLAUDE.md                      # AI assistant context
 └── README.md                      # This file
 ```
+
+---
+
+## OpenShift AI 3.x Support
+
+This project supports both RHOAI 2.x and 3.x. RHOAI 3 simplifies the architecture by removing the need for Serverless and Service Mesh operators (RawDeployment is the default mode).
+
+The base and `rosa/` overlay use RHOAI 3.x by default. To deploy with RHOAI 2.x instead, use the `rosa-v2` overlay:
+
+```bash
+# RHOAI 3.x (default)
+oc apply -k gitops/overlays/rosa/
+
+# RHOAI 2.x (legacy — adds Serverless + Service Mesh)
+oc apply -k gitops/overlays/rosa-v2/
+```
+
+For full details on what changed, see [docs/migration-v2-to-v3.md](docs/migration-v2-to-v3.md).
 
 ---
 

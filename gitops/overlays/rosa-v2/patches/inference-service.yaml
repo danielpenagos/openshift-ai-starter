@@ -4,6 +4,9 @@ metadata:
   name: mistral-7b-instruct
   namespace: llm-serving
   annotations:
+    serving.knative.openshift.io/enablePassthrough: "true"
+    sidecar.istio.io/inject: "true"
+    serving.kserve.io/deploymentMode: RawDeployment
     argocd.argoproj.io/sync-wave: "3"
   labels:
     opendatahub.io/dashboard: "true"
