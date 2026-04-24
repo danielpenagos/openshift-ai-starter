@@ -60,8 +60,10 @@ OpenShift AI 3 introduces a major architectural simplification: **RawDeployment 
 | Deployment mode annotation | `serving.kserve.io/deploymentMode: RawDeployment` | **Not needed** (RawDeployment is default) |
 | Knative annotations | `serving.knative.openshift.io/enablePassthrough: "true"` | **Remove** |
 | Istio annotations | `sidecar.istio.io/inject: "true"` | **Remove** |
-| vLLM image | `docker.io/vllm/vllm-openai:v0.8.5.post1` | `registry.redhat.io/rhaiis/vllm-cuda-rhel9:3` |
+| vLLM image | `docker.io/vllm/vllm-openai:v0.8.5.post1` | `registry.redhat.io/rhaiis/vllm-cuda-rhel9:3` (requires compute capability 8.0+) |
 | vLLM command | `python3 -m vllm.entrypoints.openai.api_server` | `vllm serve` |
+
+> **Warning:** The RHAIIS v3 vLLM image (`rhaiis/vllm-cuda-rhel9:3`) requires GPUs with **compute capability 8.0 or higher** (A10G, A100, H100). It does **not work on T4 GPUs** (compute capability 7.5). For T4 GPUs, use the upstream image `docker.io/vllm/vllm-openai:v0.8.5.post1` which automatically falls back to the V0 engine with XFormers backend.
 
 ## File-by-File Changes
 

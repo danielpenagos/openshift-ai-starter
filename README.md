@@ -16,6 +16,47 @@ Deploy a production-ready AI chatbot on managed OpenShift clusters (ROSA / ARO) 
 - `oc`, `helm`, and `rosa` (or `az`) CLIs installed and authenticated
 - `cluster-admin` privileges
 - **GPU quota** in your cloud provider region
+- Worker nodes meeting the **minimum compute requirements** below
+
+### Minimum Compute Requirements
+
+The full stack (RHOAI + ArgoCD + MinIO + vLLM + Open WebUI) requires significant compute resources. The RHOAI dashboard alone requests **2.5 CPU + 5Gi** per replica (x2 replicas by default).
+
+#### Resource requests by component
+
+| Component | Namespace | CPU request | Memory request | Notes |
+|---|---|---|---|---|
+| **RHOAI Dashboard** (x2) | `redhat-ods-applications` | 5000m | 10Gi | Largest consumer — 5 containers per pod |
+| **RHOAI Controllers** | `redhat-ods-applications` | 1520m | 2Gi | KServe, notebooks, pipelines, etc. |
+| **ArgoCD** | `openshift-gitops` | 1875m | 2.4Gi | |
+| **NVIDIA GPU Operator** | `nvidia-gpu-operator` | 200m | 200Mi | Runs on GPU node |
+| **MinIO** | `minio` | 250m | 512Mi | |
+| **vLLM (model serving)** | `llm-serving` | 2000m | 8Gi | Runs on GPU node |
+| **Open WebUI** | `open-webui` | 500m | 512Mi | |
+| **Total** | | **~11.3 CPU** | **~23.6Gi** | |
+
+#### RHOAI Dashboard breakdown (per replica)
+
+| Container | CPU request | Memory request |
+|---|---|---|
+| rhods-dashboard | 500m | 1Gi |
+| kube-rbac-proxy | 500m | 1Gi |
+| model-registry-ui | 500m | 1Gi |
+| gen-ai-ui | 500m | 1Gi |
+| maas-ui | 500m | 1Gi |
+| **Total per pod** | **2500m** | **5Gi** |
+
+#### Recommended cluster sizing
+
+| Config | Worker nodes | GPU node | Total CPU | Total MEM | Works? |
+|---|---|---|---|---|---|
+| **Minimum** | 2x `m5.2xlarge` (8 CPU, 32Gi) | 1x `g4dn.xlarge` | 19.5 CPU | 78Gi | Fits all components with little headroom |
+| **Recommended** | 3x `m5.2xlarge` (8 CPU, 32Gi) | 1x `g4dn.xlarge` | 27.5 CPU | 110Gi | Comfortable — room for additional models |
+| **Comfortable** | 3x `m5.4xlarge` (16 CPU, 64Gi) | 1x `g5.xlarge` | 51.5 CPU | 206Gi | Production-grade with multiple models |
+
+> **Warning:** 3x `m5.xlarge` (3.5 CPU, 14Gi each) is **not enough**. The RHOAI dashboard alone requires 5 CPU / 10Gi (2 replicas), which leaves insufficient capacity for ArgoCD, MinIO, and system pods on small instances.
+
+> **Note:** OpenShift system components (monitoring, ingress, DNS, etc.) consume ~2-3 CPU and ~4Gi per node before any workloads are deployed. Factor this into your sizing.
 
 ---
 
