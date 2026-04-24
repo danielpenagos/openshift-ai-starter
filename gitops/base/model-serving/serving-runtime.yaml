@@ -32,10 +32,11 @@ spec:
         - --trust-remote-code
         - --gpu-memory-utilization
         - "0.9"
+        - --enforce-eager
       env:
         - name: HOME
           value: /tmp
-        - name: VLLM_ENGINE_VERSION
+        - name: VLLM_USE_V1
           value: "0"
       ports:
         - containerPort: 8080
