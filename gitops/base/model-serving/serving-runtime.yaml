@@ -35,6 +35,8 @@ spec:
       env:
         - name: HOME
           value: /tmp
+        - name: VLLM_ENGINE_VERSION
+          value: "0"
       ports:
         - containerPort: 8080
           name: http1
