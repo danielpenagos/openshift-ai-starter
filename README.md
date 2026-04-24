@@ -80,7 +80,7 @@ export CLUSTER_NAME=dpenagos-hcp
 rosa create machinepool --cluster=$CLUSTER_NAME \
   --name=gpu-pool \
   --replicas=1 \
-  --instance-type=g4dn.xlarge \
+  --instance-type=g5.xlarge \
   --labels='nvidia.com/gpu=true' \
   --taints='nvidia.com/gpu=:NoSchedule'
 ```
