@@ -24,7 +24,7 @@ spec:
         - --port
         - "8080"
         - --max-model-len
-        - "8192"
+        - "4096"
         - --dtype
         - half
         - --quantization
