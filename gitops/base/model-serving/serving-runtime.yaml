@@ -46,8 +46,8 @@ spec:
         limits:
           nvidia.com/gpu: "1"
         requests:
-          cpu: "2"
-          memory: 8Gi
+          cpu: 500m
+          memory: 2Gi
           nvidia.com/gpu: "1"
   multiModel: false
   supportedModelFormats:
