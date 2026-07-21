@@ -33,6 +33,9 @@ spec:
         - --gpu-memory-utilization
         - "0.9"
         - --enforce-eager
+        - --enable-auto-tool-choice
+        - --tool-call-parser
+        - mistral
       env:
         - name: HOME
           value: /tmp
