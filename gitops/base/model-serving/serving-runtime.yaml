@@ -28,7 +28,7 @@ spec:
         - --dtype
         - half
         - --quantization
-        - awq
+        - compressed-tensors
         - --trust-remote-code
         - --gpu-memory-utilization
         - "0.9"
