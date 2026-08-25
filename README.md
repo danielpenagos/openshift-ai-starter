@@ -6,7 +6,7 @@ Deploy a production-ready AI chatbot on managed OpenShift clusters (ROSA / ARO) 
 
 - **5 operators** installed and configured (NFD, NVIDIA GPU, Serverless, Service Mesh, OpenShift AI)
 - **MinIO** for in-cluster model storage
-- **vLLM** serving a quantized Mistral 7B model on a single T4 GPU
+- **vLLM** serving **Mistral-7B-Instruct-v0.3** (GPTQ w4a16, 4-bit) on a single T4 GPU with tool-calling support
 - **Open WebUI** as a ChatGPT-like frontend with RAG support
 - **ArgoCD** managing everything via GitOps (app-of-apps pattern)
 
@@ -85,12 +85,32 @@ rosa create machinepool --cluster=$CLUSTER_NAME \
   --taints='nvidia.com/gpu=:NoSchedule'
 ```
 
-**ARO:** See [gitops/overlays/aro/gpu-nodepool.md](gitops/overlays/aro/gpu-nodepool.md) for Azure GPU VM options.
+**ARO:**
+
+```bash
+EXISTING=$(oc get machineset -n openshift-machine-api -o name | head -1 | cut -d/ -f2)
+CLUSTER=$(oc get machineset $EXISTING -n openshift-machine-api -o jsonpath='{.spec.template.metadata.labels.machine\.openshift\.io/cluster-api-cluster}')
+REGION=$(oc get machineset $EXISTING -n openshift-machine-api -o jsonpath='{.spec.template.spec.providerSpec.value.location}')
+
+oc get machineset $EXISTING -n openshift-machine-api -o json | \
+  jq --arg name "${CLUSTER}-gpu-${REGION}1" \
+     --arg vmsize "Standard_NC4as_T4_v3" \
+  '
+  .metadata.name = $name |
+  .metadata.labels["machine.openshift.io/cluster-api-machineset"] = $name |
+  .spec.selector.matchLabels["machine.openshift.io/cluster-api-machineset"] = $name |
+  .spec.template.metadata.labels["machine.openshift.io/cluster-api-machineset"] = $name |
+  .spec.template.spec.providerSpec.value.vmSize = $vmsize |
+  .spec.template.spec.metadata.labels = {"nvidia.com/gpu": "true"} |
+  .spec.template.spec.taints = [{"key": "nvidia.com/gpu", "effect": "NoSchedule"}] |
+  del(.metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .status)
+  ' | oc apply -f -
+```
 
 Verify the GPU node is ready:
 
 ```bash
-oc get nodes -l nvidia.com/gpu=true
+oc get nodes -l nvidia.com/gpu=true -w
 ```
 
 ### 3. Bootstrap ArgoCD and deploy everything
@@ -121,7 +141,8 @@ This script:
 Once MinIO is running, upload the quantized Mistral model:
 
 ```bash
-./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq
+source scripts/.hftoken
+./scripts/upload-model.sh RedHatAI/Mistral-7B-Instruct-v0.3-quantized.w4a16 mistral-7b-instruct-awq $HF_TOKEN
 ```
 
 This creates a pod inside the cluster that downloads the model from HuggingFace and copies it to MinIO. Follow the logs until you see `=== Done! ===`.
@@ -129,6 +150,7 @@ This creates a pod inside the cluster that downloads the model from HuggingFace 
 After the upload completes, the InferenceService pod will restart automatically and load the model. This can take a few minutes. Monitor with:
 
 ```bash
+oc delete  pods -n llm-serving -l app=isvc.mistral-7b-instruct-predictor
 oc get pods -n llm-serving -w
 ```
 
@@ -137,8 +159,20 @@ Wait until the pod shows `1/1 Running`.
 To upload a different model:
 
 ```bash
-./scripts/upload-model.sh <HUGGINGFACE_MODEL_ID> <MINIO_FOLDER_NAME>
+./scripts/upload-model.sh <HUGGINGFACE_MODEL_ID> <MINIO_FOLDER_NAME> <HF_TOKEN>
 ```
+
+### 5. Predictive AI example
+
+oc new-project neuroface
+
+helm repo add neuroface https://maximilianopizarro.github.io/neuroface/
+
+helm install neuroface neuroface/neuroface \
+  --set ovms.externalUrl=http://modelmesh-serving:8008 \
+  --set ovms.modelName=face-detection-retail-0005 \
+  --set ovms.modelmesh.enabled=true
+
 
 ### Alternative: Install Open WebUI via Helm instead of using GitOps
 
@@ -243,7 +277,7 @@ oc get route open-webui -n open-webui
 | Script | Description | Usage |
 |---|---|---|
 | `scripts/bootstrap.sh` | Install GitOps operator + deploy app-of-apps | `./scripts/bootstrap.sh <REPO_URL>` |
-| `scripts/upload-model.sh` | Upload a HuggingFace model to MinIO | `./scripts/upload-model.sh <HF_MODEL> <MINIO_PATH>` |
+| `scripts/upload-model.sh` | Upload a HuggingFace model to MinIO | `./scripts/upload-model.sh <HF_MODEL> <MINIO_PATH> <HF_TOKEN>` |
 
 ---
 
@@ -331,7 +365,7 @@ In the Open WebUI admin panel: **Admin Settings > Connections > OpenAI > Manage 
 | GPU node has `untolerated taint` | Ensure pods have `tolerations` for `nvidia.com/gpu` |
 | Open WebUI shows no models | Restart the pod: `oc delete pod -n open-webui -l app.kubernetes.io/name=open-webui` |
 | Redis permission errors in Open WebUI | Disable Redis in Helm values (already done in `open-webui-values.yaml`) |
-| vLLM OOM on T4 (16GB) | Use AWQ-quantized models or reduce `--max-model-len` |
+| vLLM OOM on T4 (16GB) | Reduce `--max-model-len` (current: 16384); the GPTQ w4a16 model uses ~3.5GB weights leaving ~12GB for KV cache |
 | `huggingface-cli` deprecated | Use `hf` command instead |
 | Pod can't write to PVC | Add `securityContext.fsGroup: 0` to the pod spec |
 | DataScienceCluster not ready | Check: `oc get dsc default-dsc -o jsonpath='{.status.conditions}'` |

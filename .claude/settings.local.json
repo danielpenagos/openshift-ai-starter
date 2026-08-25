@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(oc *)"
+      "Bash(oc *)",
+      "mcp__kubernetes-mcp-server__resources_list"
     ]
   }
 }

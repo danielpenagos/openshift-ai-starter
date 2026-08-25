@@ -6,17 +6,19 @@ set -euo pipefail
 # from HuggingFace and uploads it directly to MinIO.
 #
 # Usage:
-#   ./scripts/upload-model.sh <HF_MODEL_ID> <MINIO_PATH>
+#   ./scripts/upload-model.sh  <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>
 #
 # Examples:
-#   ./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq
-#   ./scripts/upload-model.sh TheBloke/Llama-2-7B-Chat-AWQ llama-2-7b-chat-awq
+#   ./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq hf_123456 
+#   ./scripts/upload-model.sh TheBloke/Llama-2-7B-Chat-AWQ llama-2-7b-chat-awq hf_123456 
 
-HF_MODEL="${1:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH>}"
-MINIO_PATH="${2:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH>}"
+HF_MODEL="${1:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
+MINIO_PATH="${2:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
+HF_TOKEN="${3:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
 NAMESPACE="${MINIO_NAMESPACE:-minio}"
 PVC_SIZE="${PVC_SIZE:-30Gi}"
 
+echo "==> Using Token: ${HF_TOKEN}"
 echo "==> Uploading model: ${HF_MODEL}"
 echo "==> MinIO path: models/${MINIO_PATH}"
 echo "==> Namespace: ${NAMESPACE}"
@@ -63,6 +65,8 @@ spec:
           value: /tmp/.cache/huggingface
         - name: MC_CONFIG_DIR
           value: /tmp/.mc
+        - name: HF_TOKEN
+          value: "${HF_TOKEN}"
       command:
         - /bin/bash
         - -c
@@ -99,10 +103,10 @@ spec:
       resources:
         requests:
           cpu: 250m
-          memory: 512Mi
+          memory: 1Gi
         limits:
-          cpu: "1"
-          memory: 2Gi
+          cpu: "2"
+          memory: 4Gi
   volumes:
     - name: model-storage
       persistentVolumeClaim:
@@ -114,6 +118,10 @@ kubectl wait --for=condition=Ready pod/model-uploader -n "${NAMESPACE}" --timeou
 
 echo "==> Following logs (Ctrl+C to detach, pod will continue)..."
 kubectl logs -f model-uploader -n "${NAMESPACE}" || true
+
+echo "==> Waiting for pod to complete..."
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/model-uploader -n "${NAMESPACE}" --timeout=3600s \
+  || { echo "ERROR: Pod did not complete successfully."; kubectl logs --tail=30 model-uploader -n "${NAMESPACE}" 2>/dev/null; exit 1; }
 
 echo ""
 echo "==> Cleaning up..."

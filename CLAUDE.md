@@ -32,7 +32,7 @@ openshift-ai-starter/
 
 ## Key Technical Decisions
 
-- **Model**: `TheBloke/Mistral-7B-Instruct-v0.2-AWQ` (4-bit quantized, fits on T4 16GB)
+- **Model**: `RedHatAI/Mistral-7B-Instruct-v0.3-quantized.w4a16` (GPTQ w4a16, 4-bit, fits on T4 16GB, supports tool calling)
 - **vLLM image**: `docker.io/vllm/vllm-openai:v0.8.5.post1` (upstream, not RHOAI image)
 - **GPU instance**: `g4dn.xlarge` on ROSA (cheapest, ~$0.526/hr)
 - **Storage**: MinIO in-cluster (with AWS S3 as alternative)

@@ -4,6 +4,146 @@ Layer-by-layer verification commands for the OpenShift AI Starter deployment. Wo
 
 ---
 
+## Most Used Validations
+
+Quick-reference commands used most frequently during deployment and troubleshooting.
+
+### Cluster overview
+
+```bash
+# Node capacity and types
+oc get nodes -o custom-columns="NAME:.metadata.name,TYPE:.metadata.labels.node\.kubernetes\.io/instance-type,CPU:.status.allocatable.cpu,MEM:.status.allocatable.memory,GPU:.status.allocatable.nvidia\.com/gpu"
+
+# Actual resource usage
+oc adm top nodes
+
+# Per-node resource allocation (requests vs allocatable)
+for node in $(oc get nodes -o name | cut -d/ -f2); do
+  type=$(oc get node $node -o jsonpath='{.metadata.labels.node\.kubernetes\.io/instance-type}')
+  echo "=== $node ($type) ==="
+  oc describe node $node | grep -A6 "Allocated resources:" | tail -5
+  echo ""
+done
+```
+
+### ArgoCD status
+
+```bash
+# All apps at a glance
+oc get application.argoproj.io -n openshift-gitops -o custom-columns="NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status"
+
+# Which resources are OutOfSync in a specific app?
+oc get application.argoproj.io <APP_NAME> -n openshift-gitops -o jsonpath='{.status.resources}' | jq '.[] | select(.status != "Synced") | {kind, name, status}'
+
+# Force hard refresh (clear ArgoCD cache)
+oc annotate application.argoproj.io <APP_NAME> -n openshift-gitops argocd.argoproj.io/refresh=hard --overwrite
+
+# Force sync
+oc patch application.argoproj.io <APP_NAME> -n openshift-gitops --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"syncStrategy":{"apply":{}}}}}'
+```
+
+### Operators
+
+```bash
+# All operators status (single command)
+oc get csv -A | grep -E "nfd|gpu|cert-manager|rhods"
+
+# DataScienceCluster ready?
+oc get datasciencecluster default-dsc -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+
+# Which DSC components are failing?
+oc get datasciencecluster default-dsc -o jsonpath='{.status.conditions}' | jq '.[] | select(.status != "True" and .reason != "Removed") | {type, message}'
+```
+
+### GPU node
+
+```bash
+# Is the GPU allocatable?
+oc describe node -l nvidia.com/gpu=true | grep -A7 "Allocatable:" | grep nvidia
+
+# What's consuming the GPU?
+oc get pods -A -o json | jq -r '.items[] | select(.spec.containers[]?.resources.limits."nvidia.com/gpu" != null) | "\(.metadata.namespace)/\(.metadata.name) - Status: \(.status.phase)"'
+
+# GPU operator pods on the GPU node
+oc get pods -n nvidia-gpu-operator -o wide | grep $(oc get node -l nvidia.com/gpu=true -o jsonpath='{.items[0].metadata.name}')
+```
+
+### MinIO
+
+```bash
+# Is MinIO running?
+oc get pods -n minio
+
+# List buckets and model files
+oc run mc-check --rm -it --restart=Never -n minio \
+  --image=quay.io/minio/mc:latest \
+  --env="MC_CONFIG_DIR=/tmp/.mc" \
+  --command -- /bin/sh -c '
+    mc alias set minio http://minio.minio.svc.cluster.local:9000 minioadmin minioadmin123 &&
+    mc ls minio/models/
+  '
+
+# MinIO console URL
+oc get route minio-console -n minio -o jsonpath='https://{.spec.host}{"\n"}'
+```
+
+### Model serving (vLLM)
+
+```bash
+# Pod status
+oc get pods -n llm-serving -o wide
+
+# InferenceService ready?
+oc get inferenceservice -n llm-serving
+
+# Storage-initializer logs (model download)
+oc logs -n llm-serving -l serving.kserve.io/inferenceservice=mistral-7b-instruct -c storage-initializer
+
+# vLLM logs (model loading / serving)
+oc logs -n llm-serving -l serving.kserve.io/inferenceservice=mistral-7b-instruct -c kserve-container --tail=20
+
+# vLLM logs from a crashed container
+oc logs -n llm-serving -l serving.kserve.io/inferenceservice=mistral-7b-instruct -c kserve-container --previous --tail=30
+
+# Why is the pod Pending?
+oc describe pod -n llm-serving -l serving.kserve.io/inferenceservice=mistral-7b-instruct | grep -A5 "Events:"
+
+# Test the model endpoint
+oc run curl-test --rm -it --restart=Never -n llm-serving \
+  --image=curlimages/curl -- \
+  curl -s http://mistral-7b-instruct-predictor.llm-serving.svc.cluster.local:8080/v1/models
+```
+
+### Open WebUI
+
+```bash
+# Pod status and route
+oc get pods -n open-webui
+oc get route open-webui -n open-webui -o jsonpath='https://{.spec.host}{"\n"}'
+
+# Can Open WebUI reach the model?
+oc exec -n open-webui $(oc get pod -n open-webui -l app.kubernetes.io/name=open-webui -o name) -- \
+  curl -s http://mistral-7b-instruct-predictor.llm-serving.svc.cluster.local:8080/v1/models
+
+# Restart pod (forces model re-discovery)
+oc delete pod -n open-webui -l app.kubernetes.io/name=open-webui
+```
+
+### Scheduling issues
+
+```bash
+# Why can't a pod schedule?
+oc describe pod <POD_NAME> -n <NAMESPACE> | tail -10
+
+# Which nodes have untolerated taints?
+oc get nodes -o custom-columns="NAME:.metadata.name,TAINTS:.spec.taints[*].key"
+
+# How much CPU/MEM is free per node?
+oc adm top nodes
+```
+
+---
+
 ## Layer 0: ArgoCD (GitOps Control Plane)
 
 ```bash
