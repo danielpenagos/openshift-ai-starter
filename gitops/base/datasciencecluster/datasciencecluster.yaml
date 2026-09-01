@@ -13,6 +13,8 @@ spec:
     kserve:
       managementState: Managed
       rawDeploymentServiceConfig: Headless
+      modelsAsService:
+        managementState: Managed
     ray:
       managementState: Managed
     trustyai:

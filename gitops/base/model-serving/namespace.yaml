@@ -5,6 +5,7 @@ metadata:
   labels:
     app: llm-serving
     argocd.argoproj.io/managed-by: openshift-gitops
+    opendatahub.io/project-type: user
   annotations:
     openshift.io/display-name: "LLM Serving"
     argocd.argoproj.io/sync-wave: "0"
