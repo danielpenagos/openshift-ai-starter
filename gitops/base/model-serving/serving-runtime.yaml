@@ -7,8 +7,6 @@ metadata:
     opendatahub.io/dashboard: "true"
   annotations:
     openshift.io/display-name: "vLLM ServingRuntime for KServe"
-    opendatahub.io/template-name: vllm-runtime
-    opendatahub.io/template-kind: ServingRuntime
     argocd.argoproj.io/sync-wave: "2"
 spec:
   builtInAdapter:
