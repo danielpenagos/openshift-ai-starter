@@ -12,4 +12,6 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      # add TLS config per your cluster's cert setup
+      allowedRoutes:
+        namespaces:
+          from: All
