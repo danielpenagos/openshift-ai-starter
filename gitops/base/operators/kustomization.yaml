@@ -6,3 +6,4 @@ resources:
   - cert-manager
   - openshift-ai
   - authorino
+  - rhcl
