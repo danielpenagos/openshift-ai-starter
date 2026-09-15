@@ -4,7 +4,7 @@ metadata:
   name: mistral-7b-instruct-credentials
   namespace: models-as-a-service
 stringData:
-  apiKey: "placeholder"
+  api-key: "placeholder"
 ---
 apiVersion: maas.opendatahub.io/v1alpha1
 kind: ExternalModel
