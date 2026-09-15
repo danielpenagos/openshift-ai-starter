@@ -1,0 +1,12 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: maas-default-gateway
+  namespace: openshift-ingress
+spec:
+  gatewayClassName: data-science-gateway-class   # match existing class
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      # add TLS config per your cluster's cert setup

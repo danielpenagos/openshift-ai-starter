@@ -6,6 +6,7 @@ resources:
   - operators/serverless
   - operators/servicemesh
   - operators/openshift-ai
+  - operators/authorino
   - datasciencecluster
   - minio
   - model-serving
