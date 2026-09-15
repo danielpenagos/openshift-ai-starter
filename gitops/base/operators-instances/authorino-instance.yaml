@@ -1,0 +1,53 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: maas-self-signed
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authorino-server-cert
+  namespace: redhat-ai-gateway-infra
+spec:
+  secretName: authorino-server-cert
+  issuerRef:
+    name: maas-self-signed
+    kind: ClusterIssuer
+  dnsNames:
+    - authorino-authorization.redhat-ai-gateway-infra.svc
+    - authorino-authorization.redhat-ai-gateway-infra.svc.cluster.local
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authorino-oidc-server-cert
+  namespace: redhat-ai-gateway-infra
+spec:
+  secretName: authorino-oidc-server-cert
+  issuerRef:
+    name: maas-self-signed
+    kind: ClusterIssuer
+  dnsNames:
+    - authorino-oidc.redhat-ai-gateway-infra.svc
+    - authorino-oidc.redhat-ai-gateway-infra.svc.cluster.local
+---
+apiVersion: operator.authorino.kuadrant.io/v1beta1
+kind: Authorino
+metadata:
+  name: authorino
+  namespace: redhat-ai-gateway-infra
+spec:
+  clusterWide: false
+  authConfigLabelSelectors: "app.kubernetes.io/part-of=modelsasservice"
+  listener:
+    tls:
+      enabled: true
+      certSecretRef:
+        name: authorino-server-cert
+  oidcServer:
+    tls:
+      enabled: true
+      certSecretRef:
+        name: authorino-oidc-server-cert

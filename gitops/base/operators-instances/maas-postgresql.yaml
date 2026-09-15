@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maas-postgresql-creds
+  namespace: redhat-ai-gateway-infra
+stringData:
+  POSTGRESQL_USER: maas
+  POSTGRESQL_PASSWORD: maas-password
+  POSTGRESQL_DATABASE: maas
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maas-db-config
+  namespace: redhat-ai-gateway-infra
+stringData:
+  DB_CONNECTION_URL: postgresql://maas:maas-password@maas-postgresql.redhat-ai-gateway-infra.svc.cluster.local:5432/maas
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maas-postgresql
+  namespace: redhat-ai-gateway-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: maas-postgresql
+  template:
+    metadata:
+      labels:
+        app: maas-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: quay.io/sclorg/postgresql-15-c9s:latest
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgresql-creds
+                  key: POSTGRESQL_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgresql-creds
+                  key: POSTGRESQL_PASSWORD
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgresql-creds
+                  key: POSTGRESQL_DATABASE
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maas-postgresql
+  namespace: redhat-ai-gateway-infra
+spec:
+  selector:
+    app: maas-postgresql
+  ports:
+    - port: 5432
+      targetPort: 5432
