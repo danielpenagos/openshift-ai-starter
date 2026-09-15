@@ -18,7 +18,6 @@ metadata:
   namespace: openshift-ingress
   annotations:
     opendatahub.io/managed: "false"
-    security.opendatahub.io/authorino-tls-bootstrap: "true"
 spec:
   gatewayClassName: data-science-gateway-class
   infrastructure:
