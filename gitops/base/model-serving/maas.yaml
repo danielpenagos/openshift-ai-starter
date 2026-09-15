@@ -30,6 +30,19 @@ spec:
   tenantRef: models-as-a-service
 ---
 apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSAuthPolicy
+metadata:
+  name: mistral-7b-instruct-auth
+  namespace: models-as-a-service
+spec:
+  modelRefs:
+    - name: mistral-7b-instruct
+      namespace: models-as-a-service
+  subjects:
+    groups:
+      - name: "system:authenticated"
+---
+apiVersion: maas.opendatahub.io/v1alpha1
 kind: MaaSSubscription
 metadata:
   name: mistral-7b-instruct-default
