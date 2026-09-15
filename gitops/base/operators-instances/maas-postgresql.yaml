@@ -52,6 +52,12 @@ spec:
                 secretKeyRef:
                   name: maas-postgresql-creds
                   key: POSTGRESQL_DATABASE
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, maas, -d, maas]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
