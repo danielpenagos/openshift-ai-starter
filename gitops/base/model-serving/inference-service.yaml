@@ -8,6 +8,7 @@ metadata:
   labels:
     opendatahub.io/dashboard: "true"
     networking.kserve.io/visibility: exposed
+    ai-gateway.opendatahub.io/tenant: models-as-a-service
 spec:
   predictor:
     tolerations:
