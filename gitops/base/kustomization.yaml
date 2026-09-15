@@ -7,6 +7,7 @@ resources:
   - operators/servicemesh
   - operators/openshift-ai
   - operators/authorino
+  - operators/rhcl
   - operators-instances
   - datasciencecluster
   - minio
