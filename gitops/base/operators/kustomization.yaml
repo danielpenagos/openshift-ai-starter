@@ -5,3 +5,4 @@ resources:
   - gpu-operator
   - cert-manager
   - openshift-ai
+  - authorino
