@@ -5,3 +5,4 @@ resources:
   - clusterpolicy.yaml
   - authorino-instance.yaml
   - maas-postgresql.yaml
+  - kuadrant-instance.yaml
