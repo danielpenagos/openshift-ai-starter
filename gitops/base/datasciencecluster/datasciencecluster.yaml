@@ -10,11 +10,13 @@ spec:
       managementState: Managed
     aipipelines:
       managementState: Managed
+    aigateway:
+      managementState: Managed
+      modelsAsAService:
+        managementState: Managed
     kserve:
       managementState: Managed
       rawDeploymentServiceConfig: Headless
-      modelsAsService:
-        managementState: Managed
     ray:
       managementState: Managed
     trustyai:
