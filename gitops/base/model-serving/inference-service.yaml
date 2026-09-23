@@ -19,7 +19,7 @@ spec:
       modelFormat:
         name: pytorch
       runtime: vllm-runtime
-      storageUri: s3://models/mistral-7b-instruct-awq
+      storageUri: s3://models/mistral-7b-instruct
       resources:
         limits:
           nvidia.com/gpu: "1"
