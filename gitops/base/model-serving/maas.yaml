@@ -11,6 +11,8 @@ kind: ExternalModel
 metadata:
   name: mistral-7b-instruct
   namespace: models-as-a-service
+  labels:
+    opendatahub.io/dashboard: "true"
 spec:
   endpoint: "http://mistral-7b-instruct-predictor.llm-serving.svc.cluster.local:8080"
   provider: "openai"
