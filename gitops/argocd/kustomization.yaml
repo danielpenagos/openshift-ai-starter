@@ -2,8 +2,51 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - operators.yaml
-  - operators-instances.yaml
-  - datasciencecluster.yaml
+#  - operators-instances.yaml
+#  - datasciencecluster.yaml
   - minio.yaml
-  - model-serving.yaml
-  - open-webui.yaml
+#  - model-serving.yaml
+#  - open-webui.yaml
+patches:
+  - target:
+      kind: Application
+      name: operators
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "1"
+  - target:
+      kind: Application
+      name: minio
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "1"
+  - target:
+      kind: Application
+      name: operators-instances
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "2"
+  - target:
+      kind: Application
+      name: datasciencecluster
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "3"
+  - target:
+      kind: Application
+      name: model-serving
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "4"
+  - target:
+      kind: Application
+      name: open-webui
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "5"

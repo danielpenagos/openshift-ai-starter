@@ -1,15 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - operators/nfd
-  - operators/gpu-operator
-  - operators/serverless
-  - operators/servicemesh
-  - operators/openshift-ai
-  - operators/authorino
-  - operators/rhcl
-  - operators-instances
-  - datasciencecluster
-  - minio
-  - model-serving
-  - open-webui
+  # --- OPERATORS (enable one by one) ---
+  # - operators/nfd
+  # - operators/gpu-operator
+  # - operators/cert-manager       # required by kserve (RHOAI 3.5 — replaces servicemesh/serverless)
+  # - operators/openshift-ai
+  # - operators/authorino          # required by MaaS
+  # - operators/rhcl               # required by MaaS (Red Hat Connectivity Link / Kuadrant)
+  # --- Service Mesh 3 (optional, for Istio/Kiali/OpenTelemetry/Tempo) ---
+  # - operators-servicemesh
+  # --- NOT needed for RHOAI 3.5 raw deployment mode ---
+  # - operators/serverless
+  # - operators/servicemesh    # OSSM 2 — do not use
+  # --- INSTANCES (enable after operators are ready) ---
+  # - operators-instances
+  # --- PLATFORM ---
+  # - datasciencecluster
+  # - minio
+  # - model-serving
+  # - open-webui

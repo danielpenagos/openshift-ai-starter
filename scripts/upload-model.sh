@@ -6,15 +6,15 @@ set -euo pipefail
 # from HuggingFace and uploads it directly to MinIO.
 #
 # Usage:
-#   ./scripts/upload-model.sh  <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>
+#   ./scripts/upload-model.sh  <HF_MODEL_ID> <MINIO_PATH> <HF_TOKEN>
 #
 # Examples:
-#   ./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq hf_123456 
-#   ./scripts/upload-model.sh TheBloke/Llama-2-7B-Chat-AWQ llama-2-7b-chat-awq hf_123456 
+#   ./scripts/upload-model.sh TheBloke/Mistral-7B-Instruct-v0.2-AWQ mistral-7b-instruct-awq hf_123456
+#   ./scripts/upload-model.sh TheBloke/Llama-2-7B-Chat-AWQ llama-2-7b-chat-awq hf_123456
 
-HF_MODEL="${1:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
-MINIO_PATH="${2:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
-HF_TOKEN="${3:?Usage: $0 <HF_MODEL_ID> <HF_TOKEN> <MINIO_PATH>}"
+HF_MODEL="${1:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH> <HF_TOKEN>}"
+MINIO_PATH="${2:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH> <HF_TOKEN>}"
+HF_TOKEN="${3:?Usage: $0 <HF_MODEL_ID> <MINIO_PATH> <HF_TOKEN>}"
 NAMESPACE="${MINIO_NAMESPACE:-minio}"
 PVC_SIZE="${PVC_SIZE:-30Gi}"
 
@@ -30,6 +30,39 @@ kubectl delete pvc model-download -n "${NAMESPACE}" --ignore-not-found
 # Create a ServiceAccount with anyuid SCC for PVC write access
 kubectl create serviceaccount model-uploader-sa -n "${NAMESPACE}" 2>/dev/null || true
 oc adm policy add-scc-to-user anyuid -z model-uploader-sa -n "${NAMESPACE}" 2>/dev/null || true
+
+# Build and base64-encode the Python upload script (namespace/path substituted here on the host)
+UPLOAD_PY_B64=$(cat <<PYEOF | base64 | tr -d '\n'
+from pathlib import Path
+from minio import Minio
+
+client = Minio(
+    "minio.${NAMESPACE}.svc.cluster.local:9000",
+    access_key="minioadmin",
+    secret_key="minioadmin123",
+    secure=False,
+)
+
+bucket = "models"
+if not client.bucket_exists(bucket):
+    client.make_bucket(bucket)
+    print("Created bucket: " + bucket)
+
+local_dir = Path("/models/download")
+prefix = "${MINIO_PATH}"
+files = [p for p in local_dir.rglob("*") if p.is_file()]
+total = len(files)
+print("Uploading " + str(total) + " files to minio/" + bucket + "/" + prefix + "/")
+
+for i, path in enumerate(files, 1):
+    object_name = prefix + "/" + str(path.relative_to(local_dir))
+    client.fput_object(bucket, object_name, str(path))
+    print("[" + str(i) + "/" + str(total) + "] " + object_name)
+
+objects = list(client.list_objects(bucket, prefix=prefix + "/", recursive=True))
+print("Done. Found " + str(len(objects)) + " objects in minio/" + bucket + "/" + prefix + "/")
+PYEOF
+)
 
 # Create PVC and uploader pod
 cat <<EOF | kubectl apply -f -
@@ -63,8 +96,6 @@ spec:
           value: /tmp
         - name: HF_HOME
           value: /tmp/.cache/huggingface
-        - name: MC_CONFIG_DIR
-          value: /tmp/.mc
         - name: HF_TOKEN
           value: "${HF_TOKEN}"
       command:
@@ -73,28 +104,16 @@ spec:
         - |
           set -e
           echo "=== Installing dependencies ==="
-          pip install --no-cache-dir huggingface_hub[hf_xet] -t /tmp/pip-packages
+          pip install --no-cache-dir huggingface_hub[hf_xet] minio -t /tmp/pip-packages
           export PYTHONPATH=/tmp/pip-packages:\$PYTHONPATH
           export PATH=/tmp/pip-packages/bin:\$PATH
-
-          echo "=== Installing MinIO client ==="
-          python -c "import urllib.request; urllib.request.urlretrieve('https://dl.min.io/client/mc/release/linux-amd64/mc', '/tmp/mc')"
-          chmod +x /tmp/mc
 
           echo "=== Downloading model from HuggingFace ==="
           hf download ${HF_MODEL} --local-dir /models/download
 
-          echo "=== Configuring MinIO client ==="
-          /tmp/mc alias set minio http://minio.${NAMESPACE}.svc.cluster.local:9000 minioadmin minioadmin123
-
-          echo "=== Creating bucket (if needed) ==="
-          /tmp/mc mb --ignore-existing minio/models
-
           echo "=== Uploading model to MinIO ==="
-          /tmp/mc cp --recursive /models/download/ minio/models/${MINIO_PATH}/
-
-          echo "=== Verifying upload ==="
-          /tmp/mc ls minio/models/${MINIO_PATH}/
+          echo "${UPLOAD_PY_B64}" | base64 -d > /tmp/upload.py
+          python /tmp/upload.py
 
           echo "=== Done! ==="
       volumeMounts:

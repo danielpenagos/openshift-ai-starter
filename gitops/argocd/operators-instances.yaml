@@ -3,8 +3,8 @@ kind: Application
 metadata:
   name: operators-instances
   namespace: openshift-gitops
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
+#  annotations:
+#    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
