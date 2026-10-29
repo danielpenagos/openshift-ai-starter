@@ -5,6 +5,7 @@ metadata:
   namespace: llm-serving
   annotations:
     argocd.argoproj.io/sync-wave: "3"
+    security.opendatahub.io/enable-auth: "true"
   labels:
     opendatahub.io/dashboard: "true"
     networking.kserve.io/visibility: exposed

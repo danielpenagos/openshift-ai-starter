@@ -366,6 +366,8 @@ In the Open WebUI admin panel: **Admin Settings > Connections > OpenAI > Manage 
 | Open WebUI shows no models | Restart the pod: `oc delete pod -n open-webui -l app.kubernetes.io/name=open-webui` |
 | Redis permission errors in Open WebUI | Disable Redis in Helm values (already done in `open-webui-values.yaml`) |
 | vLLM OOM on T4 (16GB) | Reduce `--max-model-len` (current: 16384); the GPTQ w4a16 model uses ~3.5GB weights leaving ~12GB for KV cache |
-| `huggingface-cli` deprecated | Use `hf` command instead |
+| `hf download` / `huggingface-cli` not working in pod | The upload script uses `snapshot_download()` Python API directly — no CLI dependency |
+| MinIO client (`mc`) download fails with 410 Gone | The upload script uses the Python `minio` package instead of the `mc` binary |
+| RHOAI dashboard "Generate Token" not visible on model | Add annotation `security.opendatahub.io/enable-auth: "true"` to the InferenceService. Note: the token UI only appears in Serverless mode; in RawDeployment mode use `oc create token <sa> -n <namespace>` |
 | Pod can't write to PVC | Add `securityContext.fsGroup: 0` to the pod spec |
 | DataScienceCluster not ready | Check: `oc get dsc default-dsc -o jsonpath='{.status.conditions}'` |
